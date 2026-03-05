@@ -1,18 +1,29 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Alert 
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
 
-export default function App() {
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+const Stack = createNativeStackNavigator();
+
+/* ================= LOGIN SCREEN ================= */
+
+function LoginScreen({ navigation }) {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
 
-  // Format số điện thoại
+  // ✅ Hiển thị chào mừng 1 lần duy nhất
+  useEffect(() => {
+    Alert.alert('Chào mừng', 'Chào mừng bạn đến với hệ thống');
+  }, []);
+
   const formatPhone = (value) => {
     const cleaned = value.replace(/\D/g, '').slice(0, 10);
 
@@ -25,19 +36,16 @@ export default function App() {
     return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 8)} ${cleaned.slice(8)}`;
   };
 
-  // Hàm kiểm tra định dạng
   const isValidPhone = (rawPhone) => {
     const regex = /^0\d{9}$/;
     return regex.test(rawPhone);
   };
 
-  // Khi nhập → chỉ format, không validate
   const handleChangeText = (value) => {
     const formatted = formatPhone(value);
     setPhone(formatted);
   };
 
-  // Khi bấm nút
   const handleConfirm = () => {
     const raw = phone.replace(/\s/g, '');
 
@@ -48,13 +56,14 @@ export default function App() {
 
     if (!isValidPhone(raw)) {
       setError('Số điện thoại không đúng định dạng. Vui lòng nhập lại');
-      Alert.alert('', 'Số điện thoại không đúng định dạng. Vui lòng nhập lại');
       return;
     }
 
-    // Nếu đúng
     setError('');
     Alert.alert('Thành công', 'Số điện thoại hợp lệ');
+
+    // ✅ Chuyển sang Home + truyền số điện thoại
+    navigation.navigate('Home', { phone: raw });
   };
 
   return (
@@ -63,7 +72,7 @@ export default function App() {
 
       <Text style={styles.label}>Nhập số điện thoại</Text>
       <Text style={styles.desc}>
-        Dùng số điện thoại để đăng nhập hoặc đăng ký tài khoản tại OneHousing Pro
+        Dùng số điện thoại để đăng nhập hoặc đăng ký tài khoản
       </Text>
 
       <Text style={styles.note}>
@@ -73,25 +82,69 @@ export default function App() {
       <TextInput
         placeholder="Nhập số điện thoại của bạn"
         keyboardType="phone-pad"
-        style={[
-          styles.input,
-          error ? styles.inputError : null
-        ]}
+        style={[styles.input, error ? styles.inputError : null]}
         value={phone}
         onChangeText={handleChangeText}
       />
 
       {error !== '' && <Text style={styles.error}>{error}</Text>}
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleConfirm}
-      >
+      <TouchableOpacity style={styles.button} onPress={handleConfirm}>
         <Text style={styles.buttonText}>Xác nhận</Text>
       </TouchableOpacity>
     </View>
   );
 }
+
+/* ================= HOME SCREEN ================= */
+
+function HomeScreen({ route, navigation }) {
+  const { phone } = route.params || {};
+
+  return (
+    <View style={homeStyles.container}>
+      <Text style={homeStyles.title}>Trang chủ</Text>
+
+      <Text style={homeStyles.welcome}>
+        Xin chào!
+      </Text>
+
+      <Text style={homeStyles.phone}>
+        Số điện thoại: {phone}
+      </Text>
+
+      <TouchableOpacity
+        style={homeStyles.logoutButton}
+        onPress={() => navigation.navigate('Login')}
+      >
+        <Text style={homeStyles.logoutText}>Đăng xuất</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+/* ================= APP ROOT ================= */
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{ title: 'Đăng nhập' }}
+        />
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ title: 'Trang chủ' }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+/* ================= STYLES LOGIN ================= */
 
 const styles = StyleSheet.create({
   container: {
@@ -141,5 +194,60 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
+  },
+});
+
+/* ================= STYLES HOME ================= */
+
+const homeStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f2f2f2',
+  },
+  emoji: {
+    fontSize: 60,
+    marginBottom: 15,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 25,
+  },
+  card: {
+    width: '100%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    elevation: 3,
+    marginBottom: 30,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  phone: {
+    fontSize: 16,
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  logoutButton: {
+    backgroundColor: '#FF3B30',
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 8,
+  },
+  logoutText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
